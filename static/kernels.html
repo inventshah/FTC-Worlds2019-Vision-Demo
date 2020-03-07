@@ -1,0 +1,145 @@
+<html>
+<head>
+<link rel='stylesheet' href='/style'></link>
+</head>
+<body>
+
+<h1> Kernel Convolutions Tool</h1>
+
+<div id='index_main'>
+	<div class = 'conv-input-cont'>
+		<input class='conv-input' id = "1" type = "number" value = "1"> 
+		<input class='conv-input' id = "2" type = "number" value = "1"> 
+		<input class='conv-input' id = "3" type = "number" value = "1"> 
+		<input class='conv-input' id = "4" type = "number" value = "1"> 
+		<input class='conv-input' id = "5" type = "number" value = "1"> 
+		<input class='conv-input' id = "6" type = "number" value = "1"> 
+		<input class='conv-input' id = "7" type = "number" value = "1"> 
+		<input class='conv-input' id = "8" type = "number" value = "1"> 
+		<input class='conv-input' id = "9" type = "number" value = "1"> 
+	</div>
+
+	<button id = "convolution" type="button">Convolve!</button>
+	<button id = "reset" type="button">Reset</button>
+	<text id = 'processing_time'> Processing time: NaN</text>
+	<div class = "row">
+		<div class = "column">
+			<h2> Original Image </h2>
+			<canvas class = "canva" id = "canvas_before"> </canvas>
+		</div>
+		<div class = "column">
+			<h2> Processed Image </h2>
+			<canvas class = "canva" id = "canvas_after"> </canvas>
+		</div>
+	</div>
+
+</div>
+
+<script>
+	var canvas = document.getElementById('canvas_after');
+	var ctx = canvas.getContext('2d');
+	var img = new Image();
+	img.src = '/img-minerals';
+	img.onload = draw;
+
+
+	function draw() {
+		var w = img.width/5;
+		var h = img.height/5;
+
+
+		canvas.width = w;
+		canvas.height = h;
+		ctx.drawImage(img, 0, 0, w,h);
+
+		var before = document.getElementById('canvas_before');
+		before.width = w;
+		before.height = h;
+		before.getContext('2d').drawImage(img, 0, 0, w,h);
+
+	}
+
+	function apply(input, result){
+
+		/*var matrix = [
+			[-1, -1, -1],
+	        [-1, 8, -1],
+	        [-1, -1, -1]
+		];*/
+
+		var matrix = [
+			[1,1,1],
+			[1,1,1],
+			[1,1,1]
+		];
+		var data = input.data;
+		var out = result.data;
+		var width = canvas.width;
+		var height = canvas.height;
+
+		var unit = 1;
+		var w = unit*2+1;
+		var h = unit*2+1;
+
+		var factor = 0;
+		for (var i = 0; i < w; i++){
+			for (var j = 0; j < h; j++){
+				matrix[j][i] = parseInt(document.getElementById((j*w+i+1)).value);
+				factor += matrix[j][i];
+			}
+		}
+		if (factor == 0){
+			factor = 1;
+		}
+
+		for (var y = unit; y < height-1-unit; y++) {
+		    for (var x = unit; x < width-1-unit; x++) {
+		      var r = 0, g = 0, b = 0;
+		      var place = 0;
+		      for (var j = 0; j < h; j++) {
+		        for (var i = 0; i < w; i++) {
+		          place = ((y + (j - unit)) * width + (x + (i - unit))) * 4;
+		          r += data[place + 0] * matrix[j][i];
+		          g += data[place + 1] * matrix[j][i];
+		          b += data[place + 2] * matrix[j][i];
+		        }
+		      }
+
+		      place = (y * width + x) * 4;
+
+		      out[place + 0] = r/factor;
+		      out[place + 1] = g/factor;
+		      out[place + 2] = b/factor;
+		      out[place + 3] = data[place + 3];
+		    }
+		  }
+	}
+
+	function new_canvas(){
+		var w = canvas.width;
+		var h = canvas.height;
+		var ctx = canvas.getContext('2d');
+		var data = ctx.getImageData(0, 0, w, h);
+		var result = ctx.createImageData(w, h);
+		apply(data, result);
+		return result;
+	}
+
+	document.getElementById('reset').onclick = function(){
+		draw();
+	}
+
+	var button = document.getElementById("convolution")
+	button.onclick = function(){
+		var t0 = Date.now();
+		ctx.putImageData(
+		new_canvas(), 0, 0);
+		var time = Date.now()-t0;
+		document.getElementById('processing_time').innerHTML = "Processing time: " + time +"ms";
+	};
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+body {
+	background-color: #0064b4;
+}
+
+.conv-input {
+	width:30px;
+	height:30px;
+	margin-bottom:4px;
+	text-align: center;
+}
+
+.conv-input-cont {
+	margin-left:10px;
+	width:100px;
+	height:100px;
+}
+
+
+.column {
+  float: left;
+  width: 50%;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.canva{
+	padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    border: 8px solid red;
+}
+
+h2, h1 {
+	text-align: center;
+	color: #FFFFFF;
+}
+ p, text {
+ 	color:#FFFFFF;
+ }

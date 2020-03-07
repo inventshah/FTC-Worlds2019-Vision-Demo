@@ -1,0 +1,191 @@
+<html>
+<head>
+<link rel='stylesheet' href='/style'></link>
+</head>
+<body>
+
+<h1> K-Means Tool</h1>
+
+<div id='kmeans'>
+	<text> K-Value: </text>
+	<input id = "k-value" type = "number" value = "2">
+	<button id = "compute" type="button">Compute</button>
+	<p id = "processing-time"> Processing time: NaN</p>
+
+	<div class = "row">
+		<div class = "column">
+			<h2> Original Image </h2>
+			<canvas class = "canva" id = "canvas_before"> </canvas>
+		</div>
+		<div class = "column">
+			<h2> Processed Image </h2>
+			<canvas class = "canva" id = "canvas_after"> </canvas>
+		</div>
+	</div>
+
+</div>
+
+<script>
+	var canvas = document.getElementById('canvas_after');
+	var ctx = canvas.getContext('2d');
+	var img = new Image();
+	img.src = '/img-flower';
+	img.onload = draw;
+
+	var cont = false;
+
+	function draw() {
+		var w = img.width/5;
+		var h = img.height/5;
+
+
+		canvas.width = w;
+		canvas.height = h;
+		ctx.drawImage(img, 0, 0, w,h);
+
+		var before = document.getElementById('canvas_before');
+		before.width = w;
+		before.height = h;
+		before.getContext('2d').drawImage(img, 0, 0, w,h);
+
+	}
+
+
+
+	function segment(data, result, k, width, height){
+		var centers = [];
+		for (var i = 0; i < k; i++){
+			centers.push([random(),random(),random(),i]);
+		}
+		var MAX_DISTANCE = 765;
+
+		var g = 0;
+        var min_dist = MAX_DISTANCE;
+        var current_dist;
+        var sums =[];
+        var nums = [];
+
+        for (var i = 0; i < k; i++){
+        	sums.push([0,0,0,i]);
+        	nums.push(0);
+        }
+
+        var img = [];
+        for (var y = 0; y < height-1; y++) {
+		    for (var x = 0; x < width-1; x++) {
+		    	var p = (y * width + x) * 4;
+		    	img.push([data[p],data[p+1],data[p+2],0,x,y]);
+		    }
+		}
+
+		cont = true;
+		var label = 0;
+		while(cont && (g < 100)){
+			for (var i = 0; i < img.length; i++){
+				for (var j = 0; j < centers.length; j++){
+					current_dist = distance(centers[j], img[i]);
+					if (current_dist < min_dist){
+						min_dist = current_dist;
+						img[i][3] = centers[j][3];
+						label = centers[j][3];
+					}
+				}
+
+				sums[label][0] += img[i][0];
+				sums[label][1] += img[i][1];
+				sums[label][2] += img[i][2];
+				nums[label]++;
+				min_dist = MAX_DISTANCE;
+			}
+			centers = new_centers(nums,sums, centers);
+			sums = [];
+			nums = [];
+			for (var i = 0; i < k; i++){
+	        	sums.push([0,0,0,i]);
+	        	nums.push(0);
+	        }
+	        g++;
+	        console.log("g: " + g);
+		}
+		var c = 0;
+		for (var y = 0; y < height-1; y++) {
+		    for (var x = 0; x < width-1; x++) {
+		    	var p = (y * width + x) * 4;
+
+		    	result[p] = centers[img[c][3]][0];
+		    	result[p+1] = centers[img[c][3]][1];
+		    	result[p+2] = centers[img[c][3]][2];
+		    	result[p+3] = data[p+3];
+		    	c++;
+		    }
+		}
+		return result;
+	}
+
+	function distance(first, last){
+		var diff = Math.pow(first[0]-last[0],2) + Math.pow(first[1]-last[1],2) + Math.pow(first[2]-last[2],2);
+		return Math.sqrt(diff);
+	}
+
+	function new_centers(nums, sums, oldc){
+        var centers = [];
+        cont = false;
+        var k = oldc.length;
+
+
+        for (var i = 0; i < k; i++){
+            if (nums[i] != 0){
+                sums[i][0] /= nums[i];
+                sums[i][1] /= nums[i];
+                sums[i][2] /= nums[i];
+
+                if (oldc[i][0] != sums[i][0] || oldc[i][1] != sums[i][1] || oldc[i][2] != sums[i][2]){
+                	cont = true;
+                }
+
+                centers.push(sums[i]);
+            } else {
+            	centers.push([random(),random(),random(),i]);
+                cont = true;
+            }
+        }
+
+        return centers;
+	}
+
+	function random(){
+		return Math.floor(Math.random() * 255);
+	}
+
+	function apply(input, result){
+		var width = canvas.width;
+		var height = canvas.height;
+		var data = input.data;
+		var out = result.data;
+
+		out = segment(data,out,parseInt(document.getElementById('k-value').value),width,height);
+	}
+
+	function new_canvas(){
+		var w = canvas.width;
+		var h = canvas.height;
+		var ctx = canvas.getContext('2d');
+		var data = document.getElementById('canvas_before').getContext('2d').getImageData(0, 0, w, h);
+		var result = ctx.createImageData(w, h);
+		var t0 = Date.now();
+		apply(data, result);
+		var time = Date.now()-t0;
+		document.getElementById("processing-time").innerHTML = "Processing time: "+ time + "ms";
+		return result;
+	}
+
+	document.getElementById("compute").onclick = function(){
+		ctx.putImageData(
+		new_canvas(), 0, 0);
+	};
+
+</script>
+
+</body>
+
+</html>
